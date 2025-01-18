@@ -8,7 +8,7 @@ trap 'rm -f "$TMPFILE"' EXIT; TMPFILE=$(mktemp) || exit 1
 [[ $# != 1 ]] && [[ $# != 2 ]] && echo Err  !!! Useage: bash this_script.sh uuid my.domain.com && exit 1
 [[ $# == 1 ]] && uuid="$(cat /proc/sys/kernel/random/uuid)" && domain="$1"
 [[ $# == 2 ]] && uuid="$1" && domain="$2"
-xtlsflow="xtls-rprx-direct" && ssmethod="none"
+xtlsflow="xtls-rprx-vision" && ssmethod="none"
 trojanpath="${uuid}-trojan"
 vlesspath="${uuid}-vless"
 vlessh2path="${uuid}-vlessh2"
@@ -23,15 +23,15 @@ configcaddy=${configcaddy:-https://raw.githubusercontent.com/azoway/across/main/
 function install_xray_caddy(){
     # xray
     bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install -u root
-    # caddy
+    # caddy install
     caddyURL="$(wget -qO- https://api.github.com/repos/caddyserver/caddy/releases | grep -E "browser_download_url.*linux_$(dpkg --print-architecture)\.deb" | cut -f4 -d\" | head -n1)"
     naivecaddyURL="$(wget -qO- https://api.github.com/repos/lxhao61/integrated-examples/releases | grep -E "browser_download_url.*linux-$(dpkg --print-architecture)\.tar.gz" | cut -f4 -d\" | head -n1)"
     wget -O $TMPFILE $caddyURL && dpkg -i $TMPFILE
-    rm -rf /usr/bin/caddy
-    wget -O caddy.tar.gz $naivecaddyURL
-    tar -zxf caddy.tar.gz -C /usr/bin && chmod +x /usr/bin/caddy
-    rm -f caddy.tar.gz
-    sed -i "s/caddy\/Caddyfile$/caddy\/Caddyfile\.json/g" /lib/systemd/system/caddy.service && systemctl daemon-reload
+    wget -4 -O $TMPFILE $naivecaddyURL && tar -zxf $TMPFILE -C /usr/bin && chmod +x /usr/bin/caddy
+    if ! grep -qE "^Exec.*\.json" /lib/systemd/system/caddy.service; then
+        sed -i -e "s/caddy\/Caddyfile/caddy\/Caddyfile\.json/g" /lib/systemd/system/caddy.service 
+    fi
+    systemctl daemon-reload
 }
 
 function config_xray_caddy(){
